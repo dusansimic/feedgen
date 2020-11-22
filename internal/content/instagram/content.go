@@ -11,6 +11,8 @@ type C struct {
 	Medias   []string
 	Username string
 	Time     int
+	Thumbs   []string
+	ThumbURL string
 }
 
 func (c C) Title() string {
@@ -39,11 +41,13 @@ func (c C) Summary() string {
 func (c C) Content() string {
 	var imgs string
 	if len(c.Medias) > 0 {
-		for _, m := range c.Medias {
-			imgs += fmt.Sprintf("<img src=\"https://instagram.com/p/%s/media/?size=l\"/>", m)
+		for i, _ := range c.Medias {
+			// imgs += fmt.Sprintf("<img src=\"https://instagram.com/p/%s/media/?size=l\"/>", m)
+			imgs += fmt.Sprintf("<img src=\"%s\"/>", c.Thumbs[i])
 		}
 	} else {
-		imgs = fmt.Sprintf("<img src=\"https://instagram.com/p/%s/media/?size=l\"/>", c.MediaID)
+		// imgs = fmt.Sprintf("<img src=\"https://instagram.com/p/%s/media/?size=l\"/>", c.MediaID)
+		imgs = fmt.Sprintf("<img src=\"%s\"/>", c.ThumbURL)
 	}
 	return fmt.Sprintf("<p>%s</p>%s", c.Caption, imgs)
 }

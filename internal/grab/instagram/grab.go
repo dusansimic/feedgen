@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/dusansimic/feedgen"
@@ -43,9 +45,12 @@ func (g *G) Grab() feedgen.Feeder {
 		c.Username = g.Source.Username
 		c.Caption = e.Node.Caption.Edges[0].Node.Text
 		c.MediaID = e.Node.Shortcode
+		c.ThumbURL = getThumbURL(g.Source.Token, e.Node.Shortcode)
 		c.Medias = make([]string, len(e.Node.Children.Edges))
+		c.Thumbs = make([]string, len(e.Node.Children.Edges))
 		for i, e := range e.Node.Children.Edges {
 			c.Medias[i] = e.Node.Shortcode
+			c.Thumbs[i] = getThumbURL(g.Source.Token, e.Node.Shortcode)
 		}
 		c.Time = e.Node.Date
 
@@ -93,7 +98,7 @@ func scrapeData(u string) (data *DataJSON, err error) {
 		err = fmt.Errorf("error on request '%s %s': %w", r.Request.Method, r.Request.URL, e)
 	})
 
-	c.Visit(fmt.Sprintf("https://instagram.com/%s", u))
+	c.Visit(fmt.Sprintf("https://www.instagram.com/%s", u))
 	c.Wait()
 
 	return data, err
@@ -107,4 +112,24 @@ func getMaxTime(c []content.C) int {
 		}
 	}
 	return max
+}
+
+func getThumbURL(tkn, sc string) string {
+	// Create a new default client
+	client := http.DefaultClient
+	// Create a new get request for instagram pic
+	req, _ := http.NewRequest("GET", fmt.Sprintf("https://graph.facebook.com/v9.0/instagram_oembed?url=https://www.instagram.com/p/%s/", sc), nil)
+	// Add authorization header
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
+	// Execute the request
+	resp, _ := client.Do(req)
+	// Close the body after reading
+	defer resp.Body.Close()
+	// Read data from body
+	body, _ := ioutil.ReadAll(resp.Body)
+	// Unmarshal body
+	var data oembedData
+	_ = json.Unmarshal(body, &data)
+	// Return the thumb url
+	return data.ThumbURL
 }

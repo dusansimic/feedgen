@@ -59,3 +59,7 @@ type childNode struct {
 	Shortcode  string     `json:"shortcode"`
 	Dimensions dimensions `json:"dimensions"`
 }
+
+type oembedData struct {
+	ThumbURL string `json:"thumbnail_url"`
+}

@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -10,7 +13,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InstagramHandler() gin.HandlerFunc {
+var failResponseFunc = func(ctx *gin.Context) {
+	ctx.Status(500)
+	ctx.Abort()
+}
+
+func InstagramHandler(clientID, clientSecret string) gin.HandlerFunc {
+	url := fmt.Sprintf("https://graph.facebook.com/oauth/access_token?client_id=%s&client_secret=%s&grant_type=client_credentials", clientID, clientSecret)
+	resp, err := http.Get(url)
+	if err != nil {
+		return failResponseFunc
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	var tokenData struct {
+		Token string `json:"access_token"`
+	}
+	if err := json.Unmarshal(body, &tokenData); err != nil {
+		return failResponseFunc
+	}
+
 	return func(ctx *gin.Context) {
 		username := ctx.Param("user")
 
@@ -26,6 +48,7 @@ func InstagramHandler() gin.HandlerFunc {
 
 		g := grab.New(grab.WithSource(source.S{
 			Username: username,
+			Token:    tokenData.Token,
 			Last:     q.Last,
 		}))
 
